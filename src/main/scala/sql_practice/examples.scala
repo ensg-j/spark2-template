@@ -60,4 +60,43 @@ object examples {
     jointure.select($"Sum_pop",$"departementName")
       .show()
   }
+
+  def exec3(): Unit = {
+    val spark = SessionBuilder.buildSession()
+    import spark.implicits._
+    var sample_07 = spark.read.format("csv")
+      .option("delimiter", "\t")
+      .load("data/input/sample_07")
+        .select($"_c0".as("id"),
+          $"_c1".as("occupation"),
+          $"_c2".as("number_07"),
+          $"_c3".as("salary_07"))
+
+    val sample_08 = spark.read.format("csv")
+      .option("delimiter", "\t")
+      .load("data/input/sample_08")
+      .select($"_c0".as("id"),
+        $"_c1".as("occupation"),
+        $"_c2".as("number_08"),
+        $"_c3".as("salary_08"))
+
+    val top_salaries = sample_07.where($"salary_07">100000)
+      .orderBy($"salary_07".desc)
+    top_salaries.select($"occupation",$"salary_07").show()
+
+    val salary_growth = sample_07.join(sample_08,Seq("occupation"))
+      .select($"occupation",($"salary_08"-$"salary_07").as("salary_growth"),$"salary_07",$"salary_08")
+      .where($"salary_growth">0)
+      .orderBy($"salary_growth".desc)
+    salary_growth.show()
+
+    val jobs_loss = sample_07.join(sample_08,Seq("occupation"))
+      .where($"salary_07">100000)
+      .select($"occupation",($"number_08"-$"number_07").as("jobs_loss"),$"number_07",$"number_08")
+      .where($"jobs_loss"<0)
+      .orderBy($"jobs_loss")
+
+    jobs_loss.show()
+
+  }
 }
