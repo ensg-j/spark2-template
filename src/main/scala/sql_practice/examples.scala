@@ -35,4 +35,29 @@ object examples {
 
 
   }
+
+  def exec2(): Unit = {
+    val spark = SessionBuilder.buildSession()
+    import spark.implicits._
+
+    val hab = spark.read
+      .json("data/input/demographie_par_commune.json")
+
+    hab.agg(sum($"Population").as("Total_population"))
+      .show()
+
+    val top_populated_departement = hab.groupBy("Departement")
+      .agg(sum($"Population").as("Sum_pop"))
+      .orderBy($"Sum_pop".desc)
+
+    top_populated_departement.show()
+
+    val departement = spark.read.csv("data/input/departements.txt")
+      .select($"_c0".as("departementName"),$"_c1".as("code"))
+
+    val jointure = top_populated_departement.join(departement,$"Departement"===$"code")
+
+    jointure.select($"Sum_pop",$"departementName")
+      .show()
+  }
 }
